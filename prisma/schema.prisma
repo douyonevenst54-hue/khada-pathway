@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Deliberately minimal. No name, no immigration status, no income figures.
+model Session {
+  id        String       @id @default(cuid())
+  pathwayId String
+  lang      String       @default("ht")
+  zip       String
+  answers   Json
+  planKeys  String[]
+  contact   String?
+  createdAt DateTime     @default(now())
+  steps     StepStatus[]
+
+  @@index([pathwayId, createdAt])
+}
+
+model StepStatus {
+  id        String   @id @default(cuid())
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+  stepKey   String
+  status    String
+  note      String?
+  updatedAt DateTime @updatedAt
+
+  @@unique([sessionId, stepKey])
+}
+
+model FollowUp {
+  id        String    @id @default(cuid())
+  sessionId String
+  dueAt     DateTime
+  doneAt    DateTime?
+  outcome   String?
+
+  @@index([dueAt])
+}
