@@ -34,3 +34,23 @@ input.zip,input.tel{width:100%;font:inherit;font-size:1.3rem;padding:14px 16px;b
 .status{color:var(--muted);font-size:.9rem;margin:6px 0 0;min-height:1.2em}
 .legal{font-size:.85rem;color:var(--muted);margin-top:22px;border-top:1px solid var(--line);padding-top:12px}
 table{width:100%;border-collapse:collapse;font-size:.95rem}td,th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+
+/* --- share bar --- */
+.share{margin:8px 0 20px}
+.share-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.sbtn{display:block;text-align:center;text-decoration:none;font:inherit;font-size:1rem;font-weight:700;padding:14px 12px;border-radius:var(--radius);border:2px solid var(--line);background:var(--field);color:var(--ink);cursor:pointer}
+.sbtn.wa{grid-column:1 / -1;background:#25d366;border-color:#25d366;color:#fff}
+.print-only{display:none}
+
+/* --- print --- */
+@media print{
+  .no-print{display:none !important}
+  .print-only{display:block}
+  html,body{background:#fff;color:#000;font-size:12pt}
+  .app{max-width:none;padding:0}
+  .plan::before{background:#999}
+  .step .n{background:#000;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .urgent{border:1px solid #000;background:#fff;color:#000}
+  .step a{color:#000}
+  .note{border-left-color:#000}
+}
