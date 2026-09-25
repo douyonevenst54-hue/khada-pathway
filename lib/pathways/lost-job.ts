@@ -1,7 +1,7 @@
 import type { Pathway } from "../types";
 
 // Pathway 1 — "Mwen pèdi travay mwen" / "I lost my job"
-// Thresholds and program rules change yearly: keep them in this file, not in components.
+// Program rules change yearly: keep them in this file, not in components.
 export const lostJob: Pathway = {
   id: "lost-job",
   name: { ht: "Mwen pèdi travay mwen", en: "I lost my job" },
@@ -32,7 +32,7 @@ export const lostJob: Pathway = {
         { ht: "Non ak adrès dènye travay ou", en: "Name and address of your last employer" },
         { ht: "Dat ou te sispann travay", en: "Date you stopped working" },
       ],
-      where: { ht: "Sou entènèt: mass.gov/unemployment", en: "Online: mass.gov/unemployment" },
+      where: { ht: "Sou entènèt (lyen anba a), oswa rele DUA.", en: "Online (link below), or call DUA." },
       url: "https://www.mass.gov/unemployment-insurance-ui-online",
       urgent: { ht: "Fè l semèn sa a", en: "Do it this week" },
     },
@@ -45,7 +45,7 @@ export const lostJob: Pathway = {
         { ht: "Prèv adrès Massachusetts", en: "Proof of Massachusetts address" },
         { ht: "Dat nesans tout moun nan kay la", en: "Birth dates of everyone in the household" },
       ],
-      where: { ht: "mahealthconnector.org, oswa yon navigatè nan sant sante kominotè a (Lowell CHC / Lynn CHC).", en: "mahealthconnector.org, or a navigator at the community health center (Lowell CHC / Lynn CHC)." },
+      where: { ht: "Sou entènèt, oswa ak yon navigatè nan {chc}.", en: "Online, or with a navigator at {chc}." },
       url: "https://www.mahealthconnector.org",
     },
     hc: {
@@ -57,24 +57,24 @@ export const lostJob: Pathway = {
         { ht: "Prèv revni", en: "Proof of income" },
         { ht: "Prèv adrès", en: "Proof of address" },
       ],
-      where: { ht: "Sou entènèt: mahealthconnector.org", en: "Online: mahealthconnector.org" },
+      where: { ht: "Sou entènèt (lyen anba a).", en: "Online (link below)." },
       url: "https://www.mahealthconnector.org",
       urgent: { ht: "60 jou sèlman", en: "60 days only" },
     },
     chc: {
       key: "chc",
       title: { ht: "Wè yon doktè kounye a, menm san asirans", en: "See a doctor now, even without insurance" },
-      why: { ht: "Sant sante kominotè yo resevwa w ak yon pri selon revni w.", en: "Community health centers charge based on your income." },
+      why: { ht: "Sant sante kominotè yo resevwa w ak yon pri selon revni w. Ou pa bezwen tann asirans lan.", en: "Community health centers charge based on your income. You don't have to wait for insurance." },
       need: [{ ht: "Nenpòt ID", en: "Any ID" }, { ht: "Prèv revni si w genyen l", en: "Proof of income if you have it" }],
-      where: { ht: "Lowell Community Health Center oswa Lynn Community Health Center. Mande 'sliding fee'.", en: "Lowell Community Health Center or Lynn Community Health Center. Ask for the sliding fee." },
-      url: "https://www.mass.gov/community-health-centers",
+      where: { ht: "{chc}. Mande 'sliding fee'.", en: "{chc}. Ask for the sliding fee." },
+      url: "{chcUrl}",
     },
     snapx: {
       key: "snapx",
       title: { ht: "Aplike pou SNAP (manje) — vwa rapid", en: "Apply for SNAP (food) — fast track" },
       why: { ht: "Ak prèske pa gen lajan, ou ka jwenn benefis manje nan 7 jou.", en: "With almost no money coming in, you may get food benefits within 7 days." },
       need: [{ ht: "ID", en: "ID" }, { ht: "Prèv adrès", en: "Proof of address" }, { ht: "Enfòmasyon sou revni ak lwaye", en: "Income and rent information" }],
-      where: { ht: "Sou entènèt: DTAConnect.com", en: "Online: DTAConnect.com" },
+      where: { ht: "Sou entènèt (DTA Connect), oswa nan biwo DTA a.", en: "Online (DTA Connect), or at the DTA office." },
       url: "https://dtaconnect.eohhs.mass.gov",
       urgent: { ht: "Di yo 'expedited'", en: "Say 'expedited'" },
     },
@@ -83,7 +83,7 @@ export const lostJob: Pathway = {
       title: { ht: "Aplike pou SNAP (manje)", en: "Apply for SNAP (food)" },
       why: { ht: "SNAP ede w achte manje pandan w ap chèche travay.", en: "SNAP helps you buy food while you look for work." },
       need: [{ ht: "ID", en: "ID" }, { ht: "Prèv adrès", en: "Proof of address" }, { ht: "Enfòmasyon sou revni ak lwaye", en: "Income and rent information" }],
-      where: { ht: "Sou entènèt: DTAConnect.com", en: "Online: DTAConnect.com" },
+      where: { ht: "Sou entènèt (DTA Connect), oswa nan biwo DTA a.", en: "Online (DTA Connect), or at the DTA office." },
       url: "https://dtaconnect.eohhs.mass.gov",
     },
     raft: {
@@ -95,7 +95,7 @@ export const lostJob: Pathway = {
         { ht: "Avi ou te resevwa a, si genyen", en: "The notice you received, if any" },
         { ht: "Prèv revni ak ID", en: "Proof of income and ID" },
       ],
-      where: { ht: "mass.gov/raft. Mèt kay la ap gen pou l ranpli yon pati.", en: "mass.gov/raft. Your landlord will need to fill out a part." },
+      where: { ht: "Sou entènèt (lyen anba a). Mèt kay la ap gen pou l ranpli yon pati.", en: "Online (link below). Your landlord will need to fill out a part." },
       url: "https://www.mass.gov/how-to/apply-for-residential-assistance-for-families-in-transition-raft",
     },
     legal: {

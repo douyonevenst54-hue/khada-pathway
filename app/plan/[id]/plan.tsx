@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Lang, Step } from "@/lib/types";
 import { ui } from "@/lib/ui";
+import { fill, fillUrl } from "@/lib/resources";
 
 export default function Plan(props: { sessionId: string; zip: string; lang: Lang; steps: Step[]; status: Record<string, string>; contact: string }) {
   const [lang, setLang] = useState<Lang>(props.lang);
@@ -11,8 +12,7 @@ export default function Plan(props: { sessionId: string; zip: string; lang: Lang
   const t = (k: string) => ui[k][lang];
 
   async function mark(stepKey: string, s: "applied" | "help") {
-    const next = { ...status, [stepKey]: s };
-    setStatus(next);
+    setStatus({ ...status, [stepKey]: s });
     await fetch(`/api/sessions/${props.sessionId}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ stepKey, status: s }) });
   }
   async function saveContact() {
@@ -34,6 +34,7 @@ export default function Plan(props: { sessionId: string; zip: string; lang: Lang
       <ol className="plan">
         {props.steps.map((s, n) => {
           const st = status[s.key];
+          const url = fillUrl(s.url, props.zip);
           return (
             <li key={s.key} className={`step ${st ?? ""}`}>
               <div className="n">{n + 1}</div>
@@ -41,7 +42,7 @@ export default function Plan(props: { sessionId: string; zip: string; lang: Lang
               <h3>{s.title[lang]}</h3>
               <p className="why">{s.why[lang]}</p>
               <ul>{s.need.map((x, j) => <li key={j}>{x[lang]}</li>)}</ul>
-              <p className="where">{s.where[lang]}<br /><a href={s.url} target="_blank" rel="noopener">{s.url.replace(/^https?:\/\/(www\.)?/, "")}</a></p>
+              <p className="where">{fill(s.where[lang], props.zip, lang)}<br /><a href={url} target="_blank" rel="noopener">{url.replace(/^https?:\/\/(www\.)?/, "")}</a></p>
               <div className="acts">
                 <button className="yes" aria-pressed={st === "applied"} onClick={() => mark(s.key, "applied")}>{t("applied")}</button>
                 <button className="no" aria-pressed={st === "help"} onClick={() => mark(s.key, "help")}>{t("help")}</button>
