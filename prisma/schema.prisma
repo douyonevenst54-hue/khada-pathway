@@ -42,4 +42,20 @@ model FollowUp {
   outcome   String?
 
   @@index([dueAt])
+}// ---- Append these two models to the end of prisma/schema.prisma ----
+
+model Navigator {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model LoginToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  email     String
+  expiresAt DateTime
+  usedAt    DateTime?
 }
