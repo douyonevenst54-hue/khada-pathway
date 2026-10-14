@@ -70,9 +70,9 @@ export async function POST(req: Request) {
       model: MODEL,
       max_tokens: 4096,
       system: EXPLAIN_LETTER_SYSTEM,
-      // Forcing a tool call makes the model return a structured object instead of free text.
+      // The model is asked to answer through this tool (forced tool_choice isn't supported on every model).
       tools: [EXPLAIN_LETTER_TOOL],
-      tool_choice: { type: "tool", name: EXPLAIN_LETTER_TOOL.name },
+      tool_choice: { type: "auto" },
       messages: [
         {
           role: "user",
@@ -89,10 +89,17 @@ export async function POST(req: Request) {
       ],
     });
     const call = msg.content.find((b) => b.type === "tool_use");
-    if (!call || call.type !== "tool_use") {
-      aiError = `ai_no_tool_${msg.stop_reason}`;
+    let raw: unknown = call && call.type === "tool_use" ? call.input : undefined;
+    if (raw === undefined) {
+      // Fallback: the model answered in text — pull out the JSON object if there is one.
+      const text = msg.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+      const a = text.indexOf("{"), z = text.lastIndexOf("}");
+      try { if (a >= 0 && z > a) raw = JSON.parse(text.slice(a, z + 1)); } catch { /* handled below */ }
+    }
+    if (raw === undefined) {
+      aiError = `ai_no_answer_${msg.stop_reason}`;
     } else {
-      const parsed = LetterResult.safeParse(call.input);
+      const parsed = LetterResult.safeParse(raw);
       if (parsed.success) result = parsed.data;
       else aiError = `ai_shape_${msg.stop_reason}_${parsed.error.issues.slice(0, 2).map((i) => i.path.join(".")).join("+")}`;
     }
