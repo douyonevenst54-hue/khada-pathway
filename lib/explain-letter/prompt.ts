@@ -33,7 +33,7 @@ If it is an advertisement or an offer (e.g. a free program through insurance), u
 urgency "low", and say clearly in Creole that it is optional and the person does not have to do anything.`;
 
 const strs = z.array(z.string()).default([]);
-const nstr = z.string().nullable().optional().transform((v) => v ?? null);
+const nstr = z.string().nullable().optional().transform((v) => (v && v.trim() ? v : null));
 
 export const LetterResult = z.object({
   is_letter: z.boolean(),
@@ -57,7 +57,7 @@ export const LetterResult = z.object({
 export type LetterResult = z.infer<typeof LetterResult>;
 
 const str = (description: string) => ({ type: "string", description });
-const nstrS = (description: string) => ({ type: ["string", "null"], description });
+const nstrS = (description: string) => ({ type: "string", description: `${description} (use an empty string if none)` });
 const arr = (description: string) => ({ type: "array", items: { type: "string" }, description });
 
 /** Tool definition the model must call — gives a structured answer instead of free text. */
@@ -73,16 +73,16 @@ export const EXPLAIN_LETTER_TOOL = {
       urgency: { type: "string", enum: ["high", "medium", "low"] },
       summary_ht: str("2-4 short sentences in Haitian Creole: what this letter is about"),
       summary_en: str("same in English"),
-      deadline: nstrS("exact deadline date as written in the letter, or null"),
-      deadline_ht: nstrS("what must be done by that date, in Creole, or null"),
-      deadline_en: nstrS("same in English, or null"),
+      deadline: nstrS("exact deadline date as written in the letter, or empty"),
+      deadline_ht: nstrS("what must be done by that date, in Creole, or empty"),
+      deadline_en: nstrS("same in English, or empty"),
       next_steps_ht: arr("steps in Creole, at most 5"),
       next_steps_en: arr("same steps in English"),
       documents_needed_ht: arr("documents needed, in Creole"),
       documents_needed_en: arr("same in English"),
-      contact: nstrS("phone number or address printed on the letter, or null"),
-      answer_ht: nstrS("short answer in Creole to the person's question, or null"),
-      answer_en: nstrS("same in English, or null"),
+      contact: nstrS("phone number or address printed on the letter, or empty"),
+      answer_ht: nstrS("short answer in Creole to the person's question, or empty"),
+      answer_en: nstrS("same in English, or empty"),
       unclear_parts: arr("anything unreadable or unclear"),
     },
     required: ["is_letter", "sender", "letter_type", "urgency", "summary_ht", "summary_en", "deadline", "next_steps_ht", "next_steps_en", "documents_needed_ht", "documents_needed_en", "contact", "unclear_parts"],

@@ -98,7 +98,9 @@ export async function POST(req: Request) {
     }
     if (aiError) console.error("explain-letter bad reply:", aiError);
   } catch (err) {
-    aiError = err instanceof Anthropic.APIError ? `ai_${err.status ?? "error"}` : `ai_exception`;
+    // Include the service's own short reason (never contains the key or the letter) so problems are visible on the page.
+    const reason = (err as Error).message.replace(/\s+/g, " ").slice(0, 160);
+    aiError = err instanceof Anthropic.APIError ? `ai_${err.status ?? "error"}: ${reason}` : `ai_exception: ${reason}`;
     console.error("explain-letter failed:", aiError, (err as Error).message);
   }
 
