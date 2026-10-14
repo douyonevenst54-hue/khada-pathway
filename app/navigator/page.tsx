@@ -6,6 +6,12 @@ import LetterReviewButtons from "./letter-review";
 
 export const dynamic = "force-dynamic";
 
+// Vercel servers run in UTC; show every date/time in Massachusetts time.
+const TZ = "America/New_York";
+const day = (d: Date) => d.toLocaleDateString("en-US", { timeZone: TZ });
+const dayTime = (d: Date) =>
+  d.toLocaleString("en-US", { timeZone: TZ, month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+
 export default async function Navigator({ searchParams }: { searchParams: Promise<{ err?: string }> }) {
   const { err } = await searchParams;
   const nav = await getNavigator();
@@ -52,7 +58,7 @@ export default async function Navigator({ searchParams }: { searchParams: Promis
               {l.redFlag && <span className="urgent">⚠ EMERGENCY WORDS — call now</span>}
               <span className="urgent" style={{ background: l.urgency === "high" ? "var(--red)" : l.urgency === "medium" ? "var(--gold)" : "var(--green)" }}>{l.urgency}</span>
               <strong>{l.sender}</strong>
-              <span style={{ color: "var(--muted)" }}>· {l.letterType} · {l.createdAt.toLocaleString()}</span>
+              <span style={{ color: "var(--muted)" }}>· {l.letterType} · {dayTime(l.createdAt)}</span>
             </div>
             <div>{l.summaryEn}</div>
             {l.deadline && <div><strong>Deadline:</strong> {l.deadline}</div>}
@@ -71,7 +77,7 @@ export default async function Navigator({ searchParams }: { searchParams: Promis
       {help.length === 0 ? <p className="lead">No open help requests.</p> : (
         <table><thead><tr><th>When</th><th>Zip</th><th>Pathway</th><th>Step</th><th>Contact</th></tr></thead>
           <tbody>{help.map((h) => (
-            <tr key={h.id}><td>{h.updatedAt.toLocaleDateString()}</td><td>{h.session.zip}</td><td>{h.session.pathwayId}</td><td>{h.stepKey}</td><td>{h.session.contact ?? "—"}</td></tr>
+            <tr key={h.id}><td>{day(h.updatedAt)}</td><td>{h.session.zip}</td><td>{h.session.pathwayId}</td><td>{h.stepKey}</td><td>{h.session.contact ?? "—"}</td></tr>
           ))}</tbody></table>
       )}
 
@@ -80,7 +86,7 @@ export default async function Navigator({ searchParams }: { searchParams: Promis
         <table><thead><tr><th>Due</th><th>Zip</th><th>Contact</th><th></th></tr></thead>
           <tbody>{due.map((f) => {
             const s = sessionsById.get(f.sessionId);
-            return <tr key={f.id}><td>{f.dueAt.toLocaleDateString()}</td><td>{s?.zip ?? "—"}</td><td>{s?.contact ?? "—"}</td><td><FollowupButton id={f.id} /></td></tr>;
+            return <tr key={f.id}><td>{day(f.dueAt)}</td><td>{s?.zip ?? "—"}</td><td>{s?.contact ?? "—"}</td><td><FollowupButton id={f.id} /></td></tr>;
           })}</tbody></table>
       )}
 
@@ -88,7 +94,7 @@ export default async function Navigator({ searchParams }: { searchParams: Promis
       <table><thead><tr><th>Date</th><th>Zip</th><th>Pathway</th><th>Applied</th><th>Help</th><th></th></tr></thead>
         <tbody>{recent.map((s) => (
           <tr key={s.id}>
-            <td>{s.createdAt.toLocaleDateString()}</td><td>{s.zip}</td><td>{s.pathwayId}</td>
+            <td>{day(s.createdAt)}</td><td>{s.zip}</td><td>{s.pathwayId}</td>
             <td>{s.steps.filter((x) => x.status === "applied").length}/{s.planKeys.length}</td>
             <td>{s.steps.filter((x) => x.status === "help").length}</td>
             <td><a href={`/plan/${s.id}?lang=ht`} target="_blank" rel="noopener">open</a></td>
