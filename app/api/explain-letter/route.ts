@@ -18,8 +18,13 @@ const EMERGENCY_EN =
   "If this is an emergency, call 911 now. If you are thinking about hurting yourself, call or text 988. A KHADA navigator will also contact you.";
 
 export async function POST(req: Request) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: "not_configured" }, { status: 503 });
+  if (!process.env.ANTHROPIC_API_KEY?.trim()) {
+    // Diagnostic: list env var NAMES (never values) that look like the key, to catch typos or extra spaces.
+    const similar = Object.keys(process.env).filter((k) => /anthropic|api.?key/i.test(k)).map((k) => JSON.stringify(k));
+    return NextResponse.json(
+      { error: "not_configured", code: `not_configured; env=${process.env.VERCEL_ENV ?? "?"}; seen=${similar.join(",") || "none"}` },
+      { status: 503 },
+    );
   }
 
   const form = await req.formData();
