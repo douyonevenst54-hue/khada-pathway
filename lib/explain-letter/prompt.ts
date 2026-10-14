@@ -31,6 +31,11 @@ RULES
    steps. Say the money will be taken automatically on that date and they must make sure it is in their account
    (e.g. "Yo pral retire $X otomatikman le [dat]. Asire w kòb la nan kont ou."). Paying by hand too could charge
    them twice. Only say "pay" when the letter shows no automatic payment.
+11. Money: for bills, estimates and benefit notices, always state the key amounts in the summary in plain words —
+   what insurance or the program pays and what the person pays or receives (e.g. "Asirans lan ta peye $X;
+   ou menm ou ta peye $Y."). Copy amounts exactly. If there are several lines, give the totals.
+12. "answer": only add what the summary and steps don't already say. If the summary already answers the
+   person's question, leave "answer" empty. Never repeat the summary.
 
 Always answer by calling the explain_letter tool — never answer in plain text. Fill every field; use an empty string or [] when something does not apply.
 
