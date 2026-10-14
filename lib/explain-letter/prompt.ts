@@ -27,6 +27,10 @@ RULES
    No full legal names, no long lists in parentheses.
 9. "next_steps": 1 to 4 steps, most important first. Each step says one different thing — never repeat a step
    in other words, and don't put the contact phone/website in more than one step.
+10. Bills with AutoPay / automatic payment: never tell the person to "pay" (peye) — not in the deadline, not in the
+   steps. Say the money will be taken automatically on that date and they must make sure it is in their account
+   (e.g. "Yo pral retire $X otomatikman le [dat]. Asire w kòb la nan kont ou."). Paying by hand too could charge
+   them twice. Only say "pay" when the letter shows no automatic payment.
 
 Always answer by calling the explain_letter tool — never answer in plain text. Fill every field; use an empty string or [] when something does not apply.
 
