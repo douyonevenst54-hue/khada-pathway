@@ -33,9 +33,17 @@ export async function POST(req: Request) {
   const redFlag = hasRedFlag(note);
   const emergency = redFlag ? (lang === "en" ? EMERGENCY_EN : EMERGENCY_MESSAGE_HT) : null;
 
-  const since = new Date(Date.now() - 864e5);
-  if ((await db.letterReview.count({ where: { createdAt: { gte: since } } })) >= DAILY_LIMIT) {
-    return NextResponse.json({ error: "busy", emergency }, { status: 429 });
+  // The daily cap and the review queue need the LetterReview table. If the database is not ready
+  // (e.g. migration not yet run), still explain the letter — just log the problem.
+  let dbOk = true;
+  try {
+    const since = new Date(Date.now() - 864e5);
+    if ((await db.letterReview.count({ where: { createdAt: { gte: since } } })) >= DAILY_LIMIT) {
+      return NextResponse.json({ error: "busy", emergency }, { status: 429 });
+    }
+  } catch (e) {
+    dbOk = false;
+    console.error("letterReview table not available — run `npx prisma migrate deploy`:", (e as Error).message);
   }
 
   if (!(file instanceof File)) return NextResponse.json({ error: "no_file", emergency }, { status: 400 });
@@ -51,6 +59,7 @@ export async function POST(req: Request) {
     : ({ type: "image", source: { type: "base64", media_type: file.type as ImageType, data } } as const);
 
   let result: LetterResult | null = null;
+  let aiError: string | null = null;
   try {
     const msg = await new Anthropic().messages.create({
       model: MODEL,
@@ -73,13 +82,14 @@ export async function POST(req: Request) {
     });
     result = parseLetterResult(msg.content.map((b) => (b.type === "text" ? b.text : "")).join(""));
   } catch (err) {
-    console.error("explain-letter failed:", (err as Error).message);
+    aiError = err instanceof Anthropic.APIError ? `ai_${err.status ?? "error"}` : "ai_parse";
+    console.error("explain-letter failed:", aiError, (err as Error).message);
   }
 
   // Save what the navigator needs to review — never the photo, the letter text, or the person's note.
-  const shouldSave = (result && result.is_letter) || redFlag;
+  const shouldSave = dbOk && ((result && result.is_letter) || redFlag);
   let reviewId: string | null = null;
-  if (shouldSave) {
+  if (shouldSave) try {
     const r = result && result.is_letter ? result : null;
     const row = await db.letterReview.create({
       data: {
@@ -104,8 +114,10 @@ export async function POST(req: Request) {
         console.error("navigator alert failed:", (e as Error).message);
       }
     }
+  } catch (e) {
+    console.error("could not save letter review:", (e as Error).message);
   }
 
-  if (!result) return NextResponse.json({ error: "ai_failed", emergency, reviewId }, { status: 502 });
+  if (!result) return NextResponse.json({ error: "ai_failed", code: aiError, emergency, reviewId }, { status: 502 });
   return NextResponse.json({ result, emergency, reviewId });
 }

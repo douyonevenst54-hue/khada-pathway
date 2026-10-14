@@ -94,7 +94,9 @@ export default function Explainer() {
       const data = await res.json().catch(() => ({}));
       if (data.emergency) setEmergency(data.emergency);
       if (!res.ok) {
-        setError(t({ file_too_large: "eTooBig", unsupported_type: "eType", busy: "eBusy" }[data.error as string] ?? (res.status === 413 ? "eTooBig" : "eFail")));
+        const msg = t({ file_too_large: "eTooBig", unsupported_type: "eType", busy: "eBusy" }[data.error as string] ?? (res.status === 413 ? "eTooBig" : "eFail"));
+        // Small code at the end helps KHADA find the problem (e.g. "503 not_configured").
+        setError(`${msg} (${res.status}${data.error ? ` ${data.code ?? data.error}` : ""})`);
       } else if (!data.result?.is_letter) {
         setError(t("eNotLetter"));
       } else {
