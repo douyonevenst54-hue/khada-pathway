@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getNavigator } from "@/lib/auth";
 import Login from "./login";
 import FollowupButton from "./followup-button";
+import LetterReviewButtons from "./letter-review";
 
 export const dynamic = "force-dynamic";
 
@@ -10,12 +11,25 @@ export default async function Navigator({ searchParams }: { searchParams: Promis
   const nav = await getNavigator();
   if (!nav) return <Login error={err === "1"} />;
 
+  const urgencyRank: Record<string, number> = { high: 0, medium: 1, low: 2 };
   const [total, help, due, recent] = await Promise.all([
     db.session.count(),
     db.stepStatus.findMany({ where: { status: "help" }, include: { session: true }, orderBy: { updatedAt: "desc" }, take: 100 }),
     db.followUp.findMany({ where: { doneAt: null, dueAt: { lte: new Date() } }, orderBy: { dueAt: "asc" }, take: 100 }),
     db.session.findMany({ orderBy: { createdAt: "desc" }, take: 20, include: { steps: true } }),
   ]);
+  // Letters live in a newer table; if its migration hasn't run yet, keep the rest of the dashboard working.
+  let lettersReady = true;
+  const [openLetters, lettersTotal, lettersReviewed, aiWrong] = await Promise.all([
+    db.letterReview.findMany({ where: { status: "open" }, orderBy: { createdAt: "desc" }, take: 100 }),
+    db.letterReview.count(),
+    db.letterReview.count({ where: { status: "done" } }),
+    db.letterReview.count({ where: { reviewNote: { startsWith: "[AI wrong]" } } }),
+  ]).catch(() => {
+    lettersReady = false;
+    return [[], 0, 0, 0] as const;
+  });
+  const letters = [...openLetters].sort((a, b) => Number(b.redFlag) - Number(a.redFlag) || urgencyRank[a.urgency] - urgencyRank[b.urgency]);
   const sessionsById = new Map(recent.map((s) => [s.id, s]));
 
   return (
@@ -24,7 +38,34 @@ export default async function Navigator({ searchParams }: { searchParams: Promis
         <div className="brand">KHADA <span>Navigator</span></div>
         <form action="/api/auth/logout" method="post"><button className="quiet" style={{ width: "auto", padding: "6px 10px" }}>Sign out ({nav.name})</button></form>
       </header>
-      <p className="lead">{total} sessions · {help.length} help requests · {due.length} follow-ups due</p>
+      <p className="lead">{total} sessions · {help.length} help requests · {due.length} follow-ups due · {letters.length} letters to review</p>
+
+      <h2 id="letters">Letters to review</h2>
+      <p className="lead" style={{ fontSize: ".9rem" }}>
+        {lettersTotal} letters explained · {lettersReviewed} reviewed · AI wrong in {aiWrong} of {lettersReviewed} reviewed
+      </p>
+      {!lettersReady ? <p className="note">Letters table not set up yet — run <code>npx prisma migrate deploy</code>.</p> : letters.length === 0 ? <p className="lead">No letters waiting.</p> : letters.map((l) => {
+        const steps = Array.isArray(l.nextSteps) ? (l.nextSteps as string[]) : [];
+        return (
+          <div key={l.id} className="lcard" style={l.redFlag ? { borderColor: "var(--red)" } : undefined}>
+            <div className="top">
+              {l.redFlag && <span className="urgent">⚠ EMERGENCY WORDS — call now</span>}
+              <span className="urgent" style={{ background: l.urgency === "high" ? "var(--red)" : l.urgency === "medium" ? "var(--gold)" : "var(--green)" }}>{l.urgency}</span>
+              <strong>{l.sender}</strong>
+              <span style={{ color: "var(--muted)" }}>· {l.letterType} · {l.createdAt.toLocaleString()}</span>
+            </div>
+            <div>{l.summaryEn}</div>
+            {l.deadline && <div><strong>Deadline:</strong> {l.deadline}</div>}
+            <div><strong>Contact:</strong> {l.contact ?? "— (no phone left)"}{l.unclear ? " · AI flagged unclear parts" : ""}</div>
+            <details>
+              <summary>What the person saw (Kreyòl)</summary>
+              <p style={{ margin: "6px 0" }}>{l.summaryHt}</p>
+              {steps.length > 0 && <ol className="list">{steps.map((s, i) => <li key={i}>{s}</li>)}</ol>}
+            </details>
+            <LetterReviewButtons id={l.id} />
+          </div>
+        );
+      })}
 
       <h2>Needs help</h2>
       {help.length === 0 ? <p className="lead">No open help requests.</p> : (

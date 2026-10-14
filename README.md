@@ -16,6 +16,14 @@ npm run dev                 # http://localhost:3000
 - `app/pathway/[id]` — screener (client). `app/plan/[id]` — the person's plan. `app/navigator` — KHADA staff view (`/navigator?key=...`).
 - `prisma/schema.prisma` — minimal by design. No names, no immigration status, no income figures.
 
+## Eksplike lèt mwen (`/eksplike-let`)
+The person photographs an official letter; AI explains it in Kreyòl (or English): sender, urgency, deadline, steps, papers needed.
+- `lib/explain-letter/prompt.ts` — the rules the AI follows (paperwork only, no medical/legal advice) + JSON shape. Edit the Creole wording here.
+- `lib/explain-letter/red-flags.ts` — emergency words → 911 / 988 message + e-mail alert to navigators.
+- `app/api/explain-letter` — calls Claude. The photo stays in memory only; it is never saved.
+- `LetterReview` table — only the summary, urgency, deadline and optional phone, for review in `/navigator#letters`.
+- Needs `ANTHROPIC_API_KEY`. After pulling: `npx prisma migrate deploy` (or `migrate dev`).
+
 ## Next
 1. Real navigator auth (magic link) and per-org accounts.
 2. 7/30-day SMS reminders (Twilio) for sessions with a contact.
