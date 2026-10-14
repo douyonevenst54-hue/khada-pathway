@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { EXPLAIN_LETTER_SYSTEM, parseLetterResult, type LetterResult } from "@/lib/explain-letter/prompt";
+import { EXPLAIN_LETTER_SYSTEM, EXPLAIN_LETTER_TOOL, LetterResult } from "@/lib/explain-letter/prompt";
 import { hasRedFlag, EMERGENCY_MESSAGE_HT } from "@/lib/explain-letter/red-flags";
 import { alertNavigators, redact } from "@/lib/explain-letter/notify";
 
@@ -68,8 +68,11 @@ export async function POST(req: Request) {
   try {
     const msg = await new Anthropic().messages.create({
       model: MODEL,
-      max_tokens: 2000,
+      max_tokens: 4096,
       system: EXPLAIN_LETTER_SYSTEM,
+      // Forcing a tool call makes the model return a structured object instead of free text.
+      tools: [EXPLAIN_LETTER_TOOL],
+      tool_choice: { type: "tool", name: EXPLAIN_LETTER_TOOL.name },
       messages: [
         {
           role: "user",
@@ -85,9 +88,17 @@ export async function POST(req: Request) {
         },
       ],
     });
-    result = parseLetterResult(msg.content.map((b) => (b.type === "text" ? b.text : "")).join(""));
+    const call = msg.content.find((b) => b.type === "tool_use");
+    if (!call || call.type !== "tool_use") {
+      aiError = `ai_no_tool_${msg.stop_reason}`;
+    } else {
+      const parsed = LetterResult.safeParse(call.input);
+      if (parsed.success) result = parsed.data;
+      else aiError = `ai_shape_${msg.stop_reason}_${parsed.error.issues.slice(0, 2).map((i) => i.path.join(".")).join("+")}`;
+    }
+    if (aiError) console.error("explain-letter bad reply:", aiError);
   } catch (err) {
-    aiError = err instanceof Anthropic.APIError ? `ai_${err.status ?? "error"}` : "ai_parse";
+    aiError = err instanceof Anthropic.APIError ? `ai_${err.status ?? "error"}` : `ai_exception`;
     console.error("explain-letter failed:", aiError, (err as Error).message);
   }
 
