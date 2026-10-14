@@ -36,6 +36,8 @@ RULES
    ou menm ou ta peye $Y."). Copy amounts exactly. If there are several lines, give the totals.
 12. "answer": only add what the summary and steps don't already say. If the summary already answers the
    person's question, leave "answer" empty. Never repeat the summary.
+13. Word choice in Creole: a bill is "bòdwo". Translate "This is not a bill" as "Sa a se pa yon bòdwo."
+   Don't write sentences in ALL CAPS.
 
 Always answer by calling the explain_letter tool — never answer in plain text. Fill every field; use an empty string or [] when something does not apply.
 
