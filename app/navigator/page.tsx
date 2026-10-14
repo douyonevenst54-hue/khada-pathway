@@ -12,16 +12,23 @@ export default async function Navigator({ searchParams }: { searchParams: Promis
   if (!nav) return <Login error={err === "1"} />;
 
   const urgencyRank: Record<string, number> = { high: 0, medium: 1, low: 2 };
-  const [total, help, due, recent, openLetters, lettersTotal, lettersReviewed, aiWrong] = await Promise.all([
+  const [total, help, due, recent] = await Promise.all([
     db.session.count(),
     db.stepStatus.findMany({ where: { status: "help" }, include: { session: true }, orderBy: { updatedAt: "desc" }, take: 100 }),
     db.followUp.findMany({ where: { doneAt: null, dueAt: { lte: new Date() } }, orderBy: { dueAt: "asc" }, take: 100 }),
     db.session.findMany({ orderBy: { createdAt: "desc" }, take: 20, include: { steps: true } }),
+  ]);
+  // Letters live in a newer table; if its migration hasn't run yet, keep the rest of the dashboard working.
+  let lettersReady = true;
+  const [openLetters, lettersTotal, lettersReviewed, aiWrong] = await Promise.all([
     db.letterReview.findMany({ where: { status: "open" }, orderBy: { createdAt: "desc" }, take: 100 }),
     db.letterReview.count(),
     db.letterReview.count({ where: { status: "done" } }),
     db.letterReview.count({ where: { reviewNote: { startsWith: "[AI wrong]" } } }),
-  ]);
+  ]).catch(() => {
+    lettersReady = false;
+    return [[], 0, 0, 0] as const;
+  });
   const letters = [...openLetters].sort((a, b) => Number(b.redFlag) - Number(a.redFlag) || urgencyRank[a.urgency] - urgencyRank[b.urgency]);
   const sessionsById = new Map(recent.map((s) => [s.id, s]));
 
@@ -37,7 +44,7 @@ export default async function Navigator({ searchParams }: { searchParams: Promis
       <p className="lead" style={{ fontSize: ".9rem" }}>
         {lettersTotal} letters explained · {lettersReviewed} reviewed · AI wrong in {aiWrong} of {lettersReviewed} reviewed
       </p>
-      {letters.length === 0 ? <p className="lead">No letters waiting.</p> : letters.map((l) => {
+      {!lettersReady ? <p className="note">Letters table not set up yet — run <code>npx prisma migrate deploy</code>.</p> : letters.length === 0 ? <p className="lead">No letters waiting.</p> : letters.map((l) => {
         const steps = Array.isArray(l.nextSteps) ? (l.nextSteps as string[]) : [];
         return (
           <div key={l.id} className="lcard" style={l.redFlag ? { borderColor: "var(--red)" } : undefined}>
