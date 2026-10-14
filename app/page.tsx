@@ -13,6 +13,7 @@ export default function Home() {
             {p.name.ht} · {p.name.en}
           </Link>
         ))}
+        <Link href="/eksplike-let" className="opt">📄 Eksplike lèt mwen · Explain my letter</Link>
       </div>
       <p className="legal">Nou pa mande non w, epi nou pa janm mande estati imigrasyon w. · We don&apos;t ask your name and we never ask about immigration status.</p>
     </main>

@@ -59,3 +59,27 @@ model LoginToken {
   expiresAt DateTime
   usedAt    DateTime?
 }
+
+// "Eksplike lèt mwen" — one row per letter explained, for navigator review.
+// Never stores the photo, the letter text, the person's free-text note, or ID numbers.
+model LetterReview {
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now())
+  lang       String    @default("ht")
+  sender     String
+  letterType String
+  urgency    String // high | medium | low
+  deadline   String?
+  summaryEn  String
+  summaryHt  String
+  nextSteps  Json // string[] in Creole, as shown to the person
+  unclear    Boolean   @default(false)
+  redFlag    Boolean   @default(false)
+  contact    String? // optional phone the person chose to leave
+  status     String    @default("open") // open | done
+  reviewedAt DateTime?
+  reviewedBy String?
+  reviewNote String?
+
+  @@index([status, createdAt])
+}

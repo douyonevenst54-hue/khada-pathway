@@ -9,13 +9,14 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
     "@prisma/client": "5.22.0",
     "jose": "^6.2.12",
     "next": "^16.3.5",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "resend": "^6.29.0",
-    "zod": "3.23.8"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@types/node": "22.7.4",
