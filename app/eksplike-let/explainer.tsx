@@ -19,6 +19,7 @@ const T: Record<string, L> = {
   from: { ht: "Lèt sa a soti nan", en: "This letter is from" },
   deadline: { ht: "DAT LIMIT", en: "DEADLINE" },
   remember: { ht: "DAT POU SONJE", en: "DATE TO REMEMBER" },
+  passed: { ht: "DAT LA DEJA PASE", en: "DEADLINE HAS PASSED" },
   todo: { ht: "Sa pou w fè", en: "What to do" },
   docs: { ht: "Papye ou bezwen", en: "Papers you need" },
   contact: { ht: "Kontak sou lèt la", en: "Contact on the letter" },
@@ -127,7 +128,7 @@ export default function Explainer() {
     return [
       `${t("from")}: ${r.sender}`,
       ht ? r.summary_ht : r.summary_en,
-      r.deadline ? `${t(r.urgency === "low" ? "remember" : "deadline")}: ${r.deadline} — ${(ht ? r.deadline_ht : r.deadline_en) ?? ""}` : "",
+      r.deadline ? `${t(r.deadline_passed ? "passed" : r.urgency === "low" ? "remember" : "deadline")}: ${r.deadline} — ${(ht ? r.deadline_ht : r.deadline_en) ?? ""}` : "",
       steps.length ? `${t("todo")}:\n${steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}` : "",
       r.contact ? `${t("contact")}: ${r.contact}` : "",
       "— KHADA Pathway",
@@ -183,8 +184,8 @@ export default function Explainer() {
           <p style={{ fontSize: "1.1rem" }}>{ht ? r.summary_ht : r.summary_en}</p>
 
           {r.deadline && (
-            <div className={r.urgency === "low" ? "deadline calm" : "deadline"}>
-              <div className="k">{t(r.urgency === "low" ? "remember" : "deadline")}</div>
+            <div className={r.deadline_passed ? "deadline passed" : r.urgency === "low" ? "deadline calm" : "deadline"}>
+              <div className="k">{t(r.deadline_passed ? "passed" : r.urgency === "low" ? "remember" : "deadline")}</div>
               <div className="v">{r.deadline}</div>
               {(ht ? r.deadline_ht : r.deadline_en) && <p style={{ margin: 0 }}>{ht ? r.deadline_ht : r.deadline_en}</p>}
             </div>
