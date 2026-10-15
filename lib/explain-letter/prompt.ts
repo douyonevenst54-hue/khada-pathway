@@ -38,6 +38,15 @@ RULES
    person's question, leave "answer" empty. Never repeat the summary.
 13. Word choice in Creole: a bill is "bòdwo". Translate "This is not a bill" as "Sa a se pa yon bòdwo."
    Don't write sentences in ALL CAPS.
+14. Today's date is given in the message. Compare every deadline with today. If the deadline has already passed,
+   set "deadline_passed" to true, say so plainly in the summary and in deadline_ht ("Dat la deja pase"), never tell
+   the person to act "before" that date, and make step 1 "call now" (rele kounye a) to ask what the status is now
+   (for example whether a bill went to collections or coverage ended). Urgency stays "high" when money or coverage
+   is at stake.
+15. Hospital, doctor, ambulance or other medical bills: add one step telling the person to ask the hospital or
+   provider whether they qualify for financial assistance ("èd finansye" / "financial assistance" or "charity care"),
+   and that in Massachusetts the Health Safety Net may help with some hospital and health-center bills.
+   Never say they will qualify — only that they can ask. Keep the payment-plan option too.
 
 Always answer by calling the explain_letter tool — never answer in plain text. Fill every field; use an empty string or [] when something does not apply.
 
@@ -52,6 +61,7 @@ const nstr = z.string().nullable().optional().transform((v) => (v && v.trim() ? 
 
 export const LetterResult = z.object({
   is_letter: z.boolean(),
+  deadline_passed: z.boolean().catch(false).default(false),
   sender: z.string().default(""),
   letter_type: z.string().default("other"),
   urgency: z.enum(["high", "medium", "low"]).catch("medium"),
@@ -99,6 +109,7 @@ export const EXPLAIN_LETTER_TOOL = {
       answer_ht: nstrS("short answer in Creole to the person's question, or empty"),
       answer_en: nstrS("same in English, or empty"),
       unclear_parts: arr("anything unreadable or unclear"),
+      deadline_passed: { type: "boolean", description: "true if the deadline is before today's date" },
     },
     required: ["is_letter", "sender", "letter_type", "urgency", "summary_ht", "summary_en", "deadline", "next_steps_ht", "next_steps_en", "documents_needed_ht", "documents_needed_en", "contact", "unclear_parts"],
   },
