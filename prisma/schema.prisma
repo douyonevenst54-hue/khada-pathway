@@ -70,6 +70,8 @@ model LetterReview {
   letterType String
   urgency    String // high | medium | low
   deadline   String?
+  deadlineDate DateTime? @db.Date // parsed deadline, for reminders
+  deadlineNote String? // what to do by then, in the person's language
   summaryEn  String
   summaryHt  String
   nextSteps  Json // string[] in Creole, as shown to the person
@@ -82,4 +84,26 @@ model LetterReview {
   reviewNote String?
 
   @@index([status, createdAt])
+}
+
+// "Fè m sonje" — WhatsApp reminders a navigator sends with one tap from /navigator.
+// kind "before": 7 days before the deadline. kind "after": 1 day after, to check it got done.
+model Reminder {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  reviewId  String
+  kind      String // before | after
+  phone     String // digits with country code, e.g. 17815551234
+  lang      String    @default("ht")
+  sender    String
+  deadline  DateTime  @db.Date
+  note      String?
+  remindAt  DateTime
+  status    String    @default("pending") // pending | sent | cancelled
+  sentAt    DateTime?
+  sentBy    String?
+  outcome   String? // after-check: done | help | no_answer
+
+  @@unique([reviewId, kind])
+  @@index([status, remindAt])
 }

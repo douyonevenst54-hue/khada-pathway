@@ -24,6 +24,15 @@ The person photographs an official letter; AI explains it in Kreyòl (or English
 - `LetterReview` table — only the summary, urgency, deadline and optional phone, for review in `/navigator#letters`.
 - Needs `ANTHROPIC_API_KEY`. After pulling: `npx prisma migrate deploy` (or `migrate dev`).
 
+## Fè m sonje (deadline reminders)
+When an explained letter has a future deadline, the person sees a **Fè m sonje** box:
+- **📅 Add to calendar** — `/api/ics` returns an event with alerts 7 days and 1 day before. Nothing is stored.
+- **💬 WhatsApp reminder** — with consent, saves two `Reminder` rows: 7 days before, and a check-in 1 day after.
+  Navigators send them from `/navigator#reminders` with one tap (opens WhatsApp with the Kreyòl message ready),
+  then record the check-in answer (done / needs help / no answer) or Stop. This gives the "deadlines met" number.
+- Helpers and message wording: `lib/reminders.ts`. After pulling: `npx prisma migrate deploy`.
+- Next step: send automatically (Twilio WhatsApp/SMS + a daily Vercel cron) once a sender number is approved.
+
 ## Next
 1. Real navigator auth (magic link) and per-org accounts.
 2. 7/30-day SMS reminders (Twilio) for sessions with a contact.

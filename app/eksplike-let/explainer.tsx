@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { L, Lang } from "@/lib/types";
 import type { LetterResult } from "@/lib/explain-letter/prompt";
+import { isIsoDate, todayIso } from "@/lib/reminders";
 
 const T: Record<string, L> = {
   title: { ht: "Eksplike lèt mwen", en: "Explain my letter" },
@@ -38,6 +39,16 @@ const T: Record<string, L> = {
   eBusy: { ht: "Sèvis la chaje jodi a. Eseye demen, oswa rele yon navigatè KHADA.", en: "The service is busy today. Try tomorrow or call a KHADA navigator." },
   eFail: { ht: "Nou pa t ka li lèt la. Eseye ankò, oswa pale ak yon navigatè KHADA.", en: "We couldn't read the letter. Try again or talk to a KHADA navigator." },
   eNet: { ht: "Pa gen koneksyon. Eseye ankò.", en: "No connection. Try again." },
+  remindTitle: { ht: "Fè m sonje", en: "Remind me" },
+  remindLead: { ht: "Pou w pa bliye dat limit la:", en: "So you don't miss the deadline:" },
+  cal: { ht: "📅 Mete l nan kalandriye telefòn mwen", en: "📅 Add it to my phone's calendar" },
+  waRemind: { ht: "💬 KHADA voye m yon rapèl sou WhatsApp", en: "💬 KHADA sends me a WhatsApp reminder" },
+  remindPhone: { ht: "Nimewo WhatsApp ou:", en: "Your WhatsApp number:" },
+  remindConsent: { ht: "Mwen dakò pou KHADA kenbe nimewo m ak dat la pou voye m 2 mesaj: yon rapèl 7 jou anvan, ak yon ti mesaj 1 jou apre pou wè si tout bagay byen pase. Ekri STOP nenpòt ki lè pou n sispann.", en: "I agree that KHADA may keep my number and the date to send me 2 messages: a reminder 7 days before, and a short check-in 1 day after. Reply STOP anytime." },
+  remindGo: { ht: "Wi, voye m rapèl", en: "Yes, remind me" },
+  remindOk: { ht: "Byen! Yon navigatè KHADA ap voye w yon rapèl sou WhatsApp anvan dat la.", en: "Done! A KHADA navigator will send you a WhatsApp reminder before the date." },
+  remindBadPhone: { ht: "Tcheke nimewo a (10 chif).", en: "Check the number (10 digits)." },
+  remindFail: { ht: "Nou pa t ka anrejistre rapèl la. Itilize kalandriye a pou kounye a.", en: "We couldn't save the reminder. Use the calendar for now." },
 };
 
 const URG_COLOR = { high: "var(--red)", medium: "var(--gold)", low: "var(--green)" } as const;
@@ -70,6 +81,11 @@ export default function Explainer() {
   const [error, setError] = useState<string | null>(null);
   const [emergency, setEmergency] = useState<string | null>(null);
   const [r, setR] = useState<LetterResult | null>(null);
+  const [reviewId, setReviewId] = useState<string | null>(null);
+  const [showWa, setShowWa] = useState(false);
+  const [waPhone, setWaPhone] = useState("");
+  const [waConsent, setWaConsent] = useState(false);
+  const [waState, setWaState] = useState<"idle" | "busy" | "ok" | "badPhone" | "fail">("idle");
   const t = (k: string) => T[k][lang];
 
   async function choose(f: File | undefined) {
@@ -103,6 +119,8 @@ export default function Explainer() {
         setError(t("eNotLetter"));
       } else {
         setR(data.result);
+        setReviewId(data.reviewId ?? null);
+        setWaPhone(contact);
         window.scrollTo({ top: 0 });
       }
     } catch {
@@ -114,6 +132,7 @@ export default function Explainer() {
 
   function reset() {
     setR(null); setFile(null); setNote(""); setError(null);
+    setReviewId(null); setShowWa(false); setWaConsent(false); setWaState("idle");
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
   }
@@ -122,6 +141,29 @@ export default function Explainer() {
   const steps = r ? (ht ? r.next_steps_ht : r.next_steps_en) : [];
   const docs = r ? (ht ? r.documents_needed_ht : r.documents_needed_en) : [];
   const answer = r ? (ht ? r.answer_ht : r.answer_en) : null;
+
+  // Reminders only make sense for a real, future deadline.
+  const remindable = !!r && !r.deadline_passed && isIsoDate(r.deadline_iso) && r.deadline_iso >= todayIso();
+  const icsHref = remindable && r
+    ? `/api/ics?${new URLSearchParams({ d: r.deadline_iso!, s: r.sender, n: (ht ? r.deadline_ht : r.deadline_en) ?? "", l: lang })}`
+    : "";
+
+  async function saveReminder() {
+    if (!reviewId || !waConsent) return;
+    if (waPhone.replace(/\D/g, "").length < 10) { setWaState("badPhone"); return; }
+    setWaState("busy");
+    try {
+      const res = await fetch("/api/reminders", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ reviewId, phone: waPhone, consent: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setWaState(res.ok ? "ok" : data.error === "bad_phone" ? "badPhone" : "fail");
+    } catch {
+      setWaState("fail");
+    }
+  }
 
   function shareText() {
     if (!r) return "";
@@ -188,6 +230,31 @@ export default function Explainer() {
               <div className="k">{t(r.deadline_passed ? "passed" : r.urgency === "low" ? "remember" : "deadline")}</div>
               <div className="v">{r.deadline}</div>
               {(ht ? r.deadline_ht : r.deadline_en) && <p style={{ margin: 0 }}>{ht ? r.deadline_ht : r.deadline_en}</p>}
+            </div>
+          )}
+
+          {remindable && (
+            <div className="remind no-print">
+              <h3 style={{ marginTop: 0 }}>🔔 {t("remindTitle")}</h3>
+              <p className="lead" style={{ fontSize: ".95rem", margin: "0 0 10px" }}>{t("remindLead")}</p>
+              <a className="sbtn" href={icsHref}>{t("cal")}</a>
+              {reviewId && waState !== "ok" && !showWa && (
+                <button className="sbtn" style={{ width: "100%", marginTop: 10 }} onClick={() => setShowWa(true)}>{t("waRemind")}</button>
+              )}
+              {reviewId && showWa && waState !== "ok" && (
+                <div style={{ marginTop: 12 }}>
+                  <label className="field">{t("remindPhone")}
+                    <input className="tel" type="tel" inputMode="tel" value={waPhone} onChange={(e) => { setWaPhone(e.target.value); setWaState("idle"); }} />
+                  </label>
+                  <label className="consent">
+                    <input type="checkbox" checked={waConsent} onChange={(e) => setWaConsent(e.target.checked)} />
+                    <span>{t("remindConsent")}</span>
+                  </label>
+                  {(waState === "badPhone" || waState === "fail") && <p className="err">{t(waState === "badPhone" ? "remindBadPhone" : "remindFail")}</p>}
+                  <button className="big" style={{ marginTop: 0 }} disabled={!waConsent || waState === "busy"} onClick={saveReminder}>{t("remindGo")}</button>
+                </div>
+              )}
+              {waState === "ok" && <p className="ok">✓ {t("remindOk")}</p>}
             </div>
           )}
 

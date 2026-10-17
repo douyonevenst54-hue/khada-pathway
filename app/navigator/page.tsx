@@ -3,6 +3,7 @@ import { getNavigator } from "@/lib/auth";
 import Login from "./login";
 import FollowupButton from "./followup-button";
 import LetterReviewButtons from "./letter-review";
+import RemindersSection from "./reminders-section";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,8 @@ export default async function Navigator({ searchParams }: { searchParams: Promis
             <tr key={h.id}><td>{day(h.updatedAt)}</td><td>{h.session.zip}</td><td>{h.session.pathwayId}</td><td>{h.stepKey}</td><td>{h.session.contact ?? "—"}</td></tr>
           ))}</tbody></table>
       )}
+
+      <RemindersSection />
 
       <h2 style={{ marginTop: 24 }}>Follow-ups due</h2>
       {due.length === 0 ? <p className="lead">Nothing due today.</p> : (

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { EXPLAIN_LETTER_SYSTEM, EXPLAIN_LETTER_TOOL, LetterResult } from "@/lib/explain-letter/prompt";
 import { hasRedFlag, EMERGENCY_MESSAGE_HT } from "@/lib/explain-letter/red-flags";
 import { alertNavigators, redact } from "@/lib/explain-letter/notify";
+import { isIsoDate } from "@/lib/reminders";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -125,6 +126,9 @@ export async function POST(req: Request) {
         letterType: r?.letter_type ?? "unknown",
         urgency: r?.urgency ?? "high",
         deadline: r?.deadline ?? null,
+        // Real calendar date for "Fè m sonje" reminders (only when the AI gave a valid one).
+        deadlineDate: r && isIsoDate(r.deadline_iso) ? new Date(`${r.deadline_iso}T00:00:00Z`) : null,
+        deadlineNote: r ? redact((lang === "en" ? r.deadline_en : r.deadline_ht) ?? "").slice(0, 300) || null : null,
         summaryEn: redact(r?.summary_en || "AI could not read the letter. Person typed emergency words."),
         summaryHt: redact(r?.summary_ht || ""),
         nextSteps: (r?.next_steps_ht ?? []).map(redact),
