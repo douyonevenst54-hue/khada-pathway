@@ -9,6 +9,9 @@ const T: Record<string, L> = {
   title: { ht: "Eksplike lèt mwen", en: "Explain my letter" },
   lead: { ht: "Ou resevwa yon lèt ou pa konprann? Pran yon foto. N ap eksplike w li an kreyòl, ak sa pou w fè.", en: "Got a letter you don't understand? Take a photo. We'll explain it and tell you what to do." },
   pick: { ht: "📷 Pran foto lèt la", en: "📷 Take a photo of the letter" },
+  pickFile: { ht: "🖼️ Chwazi yon foto oswa yon PDF ou deja genyen", en: "🖼️ Choose a photo or PDF you already have" },
+  pickFileHint: { ht: "Pa egzanp yon foto yon moun voye ba ou sou WhatsApp, oswa yon PDF nan imèl ou.", en: "For example a photo someone sent you on WhatsApp, or a PDF from your email." },
+  fileReady: { ht: "PDF la pare", en: "PDF ready" },
   picked: { ht: "Foto a pare", en: "Photo ready" },
   change: { ht: "Chanje foto a", en: "Change photo" },
   tip: { ht: "Mete lèt la sou tab la, nan bon limyè. Pran tout paj la.", en: "Lay the letter flat in good light. Get the whole page." },
@@ -194,11 +197,18 @@ export default function Explainer() {
           <h1>{t("title")}</h1>
           <p className="lead">{t("lead")}</p>
 
+          {/* Camera: opens the phone camera directly. */}
           <label className="drop">
-            <input type="file" accept="image/*,application/pdf" capture="environment" hidden onChange={(e) => choose(e.target.files?.[0])} />
+            <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ""; }} />
             {preview ? <img src={preview} alt="" /> : null}
-            <span>{file ? `✓ ${t("picked")} · ${t("change")}` : t("pick")}</span>
+            <span>{file ? `✓ ${t(file.type === "application/pdf" ? "fileReady" : "picked")} · ${t("change")}` : t("pick")}</span>
           </label>
+          {/* Gallery / files: a photo received on WhatsApp, a screenshot, or a PDF from email. No "capture", so the phone offers Photos and Files. */}
+          <label className="sbtn" style={{ display: "block", cursor: "pointer", margin: "0 0 6px" }}>
+            <input type="file" accept="image/*,application/pdf" hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ""; }} />
+            {t("pickFile")}
+          </label>
+          <p className="lead" style={{ fontSize: ".85rem", margin: "0 0 8px" }}>{t("pickFileHint")}</p>
           <p className="lead" style={{ fontSize: ".95rem" }}>{t("tip")}</p>
 
           <label className="field">{t("noteAsk")}
