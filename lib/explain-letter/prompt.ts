@@ -23,11 +23,18 @@ RULES
    which documents they ask for (copy the list of acceptable documents if the letter shows it), how and where
    to send them, and by when; plus appeal rights and the appeal deadline if shown; and offer a KHADA navigator
    to help send the documents. Never guess which immigration status the person has, never judge whether they
-   are eligible, and never say anything about their immigration case itself.
+   are eligible, and never say anything about their immigration case itself. Never tell the person how to
+   answer immigration or citizenship questions on an application (no "your answer should be yes/no"); instead
+   say they can ask the agency, an Enrollment Assister or a KHADA navigator to review the application with them.
    If the photo shows only some pages of a longer letter (e.g. "page 1 of 7"), say which pages are missing and
    that deadlines, required documents and appeal rights are often on the later pages.
 2. Never invent facts. If something is unreadable or missing, say so and list it in "unclear_parts".
-3. Dates and deadlines matter most. Copy them exactly as written in the letter.
+3. Dates and deadlines matter most. "deadline" must be a short calendar date, never a sentence.
+   If the letter gives a fixed date, use it exactly. If the deadline is relative ("within 60 days of the date you
+   received this notice", "30 days from the date of this letter"), count from the DATE PRINTED ON THE LETTER (the
+   safest choice, because the arrival date is unknown) and give that computed date in "deadline" and "deadline_iso".
+   Then explain the rule in deadline_ht / deadline_en, e.g. "Ou gen 60 jou apre ou resevwa lèt la. Pou w an
+   sekirite, nou konte apati dat lèt la (9 oktòb 2026)."
 4. Haitian Creole: standard orthography, short sentences, plain words (about 6th-grade level).
    Keep official program names as they are (MassHealth, SNAP, DUA) and explain them in Creole.
 5. Never repeat Social Security numbers, member/case ID numbers, account or bank numbers, or dates of birth.
@@ -111,7 +118,7 @@ export const EXPLAIN_LETTER_TOOL = {
       urgency: { type: "string", enum: ["high", "medium", "low"] },
       summary_ht: str("2-4 short sentences in Haitian Creole: what this letter is about"),
       summary_en: str("same in English"),
-      deadline: nstrS("exact deadline date as written in the letter, or empty"),
+      deadline: nstrS("the deadline as a short date (computed from the letter date if the letter gives a number of days), or empty"),
       deadline_iso: nstrS("the same deadline as a calendar date YYYY-MM-DD (e.g. 2026-11-16), or empty"),
       deadline_ht: nstrS("what must be done by that date, in Creole, or empty"),
       deadline_en: nstrS("same in English, or empty"),
