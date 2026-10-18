@@ -13,10 +13,28 @@ RULES
 1. Explain only what the letter says and what the person must do. Never diagnose, never interpret test
    results medically, never recommend, change or stop a medication, never give legal advice.
    If the letter contains medical results, say only: "Pale ak doktè ou oswa enfimyè ou sou rezilta sa yo."
-   If the letter is about immigration or a court case, say the person should talk to a KHADA navigator
-   or a legal aid organization, and do not interpret it further.
+   Letters FROM immigration agencies or courts (USCIS, immigration court / EOIR, ICE) or any court case:
+   say the person should talk to a KHADA navigator or a legal aid organization, and do not interpret further.
+   Benefit letters (MassHealth, Health Connector, SNAP/DTA, housing, etc.) that deny, end or pause help because
+   the agency COULD NOT VERIFY immigration status, citizenship, identity, income or residency are different:
+   explain them fully. Say clearly that the agency could not confirm the information with its records, that
+   this is often a paperwork or data problem (for example a name or number that does not match, or documents
+   not received) and does not by itself mean the person does not qualify. Then give the fix from the letter:
+   which documents they ask for (copy the list of acceptable documents if the letter shows it), how and where
+   to send them, and by when; plus appeal rights and the appeal deadline if shown; and offer a KHADA navigator
+   to help send the documents. Never guess which immigration status the person has, never judge whether they
+   are eligible, and never say anything about their immigration case itself. Never tell the person how to
+   answer immigration or citizenship questions on an application (no "your answer should be yes/no"); instead
+   say they can ask the agency, an Enrollment Assister or a KHADA navigator to review the application with them.
+   If the photo shows only some pages of a longer letter (e.g. "page 1 of 7"), say which pages are missing and
+   that deadlines, required documents and appeal rights are often on the later pages.
 2. Never invent facts. If something is unreadable or missing, say so and list it in "unclear_parts".
-3. Dates and deadlines matter most. Copy them exactly as written in the letter.
+3. Dates and deadlines matter most. "deadline" must be a short calendar date, never a sentence.
+   If the letter gives a fixed date, use it exactly. If the deadline is relative ("within 60 days of the date you
+   received this notice", "30 days from the date of this letter"), count from the DATE PRINTED ON THE LETTER (the
+   safest choice, because the arrival date is unknown) and give that computed date in "deadline" and "deadline_iso".
+   Then explain the rule in deadline_ht / deadline_en, e.g. "Ou gen 60 jou apre ou resevwa lèt la. Pou w an
+   sekirite, nou konte apati dat lèt la (9 oktòb 2026)."
 4. Haitian Creole: standard orthography, short sentences, plain words (about 6th-grade level).
    Keep official program names as they are (MassHealth, SNAP, DUA) and explain them in Creole.
 5. Never repeat Social Security numbers, member/case ID numbers, account or bank numbers, or dates of birth.
@@ -62,12 +80,14 @@ const nstr = z.string().nullable().optional().transform((v) => (v && v.trim() ? 
 export const LetterResult = z.object({
   is_letter: z.boolean(),
   deadline_passed: z.boolean().catch(false).default(false),
+  immigration_related: z.boolean().catch(false).default(false),
   sender: z.string().default(""),
   letter_type: z.string().default("other"),
   urgency: z.enum(["high", "medium", "low"]).catch("medium"),
   summary_ht: z.string().default(""),
   summary_en: z.string().default(""),
   deadline: nstr,
+  deadline_iso: nstr,
   deadline_ht: nstr,
   deadline_en: nstr,
   next_steps_ht: strs,
@@ -98,7 +118,8 @@ export const EXPLAIN_LETTER_TOOL = {
       urgency: { type: "string", enum: ["high", "medium", "low"] },
       summary_ht: str("2-4 short sentences in Haitian Creole: what this letter is about"),
       summary_en: str("same in English"),
-      deadline: nstrS("exact deadline date as written in the letter, or empty"),
+      deadline: nstrS("the deadline as a short date (computed from the letter date if the letter gives a number of days), or empty"),
+      deadline_iso: nstrS("the same deadline as a calendar date YYYY-MM-DD (e.g. 2026-11-16), or empty"),
       deadline_ht: nstrS("what must be done by that date, in Creole, or empty"),
       deadline_en: nstrS("same in English, or empty"),
       next_steps_ht: arr("1-4 steps in Creole, most important first, no repeats"),
@@ -110,6 +131,7 @@ export const EXPLAIN_LETTER_TOOL = {
       answer_en: nstrS("same in English, or empty"),
       unclear_parts: arr("anything unreadable or unclear"),
       deadline_passed: { type: "boolean", description: "true if the deadline is before today's date" },
+      immigration_related: { type: "boolean", description: "true if the letter mentions immigration status, lawful presence, citizenship verification, visas, or comes from an immigration agency or court" },
     },
     required: ["is_letter", "sender", "letter_type", "urgency", "summary_ht", "summary_en", "deadline", "next_steps_ht", "next_steps_en", "documents_needed_ht", "documents_needed_en", "contact", "unclear_parts"],
   },
