@@ -73,6 +73,7 @@ const nstr = z.string().nullable().optional().transform((v) => (v && v.trim() ? 
 export const LetterResult = z.object({
   is_letter: z.boolean(),
   deadline_passed: z.boolean().catch(false).default(false),
+  immigration_related: z.boolean().catch(false).default(false),
   sender: z.string().default(""),
   letter_type: z.string().default("other"),
   urgency: z.enum(["high", "medium", "low"]).catch("medium"),
@@ -123,6 +124,7 @@ export const EXPLAIN_LETTER_TOOL = {
       answer_en: nstrS("same in English, or empty"),
       unclear_parts: arr("anything unreadable or unclear"),
       deadline_passed: { type: "boolean", description: "true if the deadline is before today's date" },
+      immigration_related: { type: "boolean", description: "true if the letter mentions immigration status, lawful presence, citizenship verification, visas, or comes from an immigration agency or court" },
     },
     required: ["is_letter", "sender", "letter_type", "urgency", "summary_ht", "summary_en", "deadline", "next_steps_ht", "next_steps_en", "documents_needed_ht", "documents_needed_en", "contact", "unclear_parts"],
   },

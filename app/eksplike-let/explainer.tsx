@@ -10,6 +10,14 @@ const T: Record<string, L> = {
   lead: { ht: "Ou resevwa yon lèt ou pa konprann? Pran yon foto. N ap eksplike w li an kreyòl, ak sa pou w fè.", en: "Got a letter you don't understand? Take a photo. We'll explain it and tell you what to do." },
   pick: { ht: "📷 Pran foto lèt la", en: "📷 Take a photo of the letter" },
   pickFile: { ht: "🖼️ Chwazi yon foto oswa yon PDF ou deja genyen", en: "🖼️ Choose a photo or PDF you already have" },
+  pickMore: { ht: "📷 Pran foto pwochen paj la", en: "📷 Photograph the next page" },
+  pickFileMore: { ht: "🖼️ Ajoute lòt paj (foto oswa PDF)", en: "🖼️ Add more pages (photo or PDF)" },
+  page: { ht: "Paj", en: "Page" },
+  remove: { ht: "Retire paj sa a", en: "Remove this page" },
+  pagesReady: { ht: "paj pare", en: "page(s) ready" },
+  pagesMax: { ht: "jiska 10", en: "up to 10" },
+  multiTip: { ht: "Si lèt la gen plizyè paj, mete CHAK paj. Dat limit ak dwa pou fè apèl souvan nan dènye paj yo.", en: "If the letter has several pages, add EVERY page. Deadlines and appeal rights are often on the last pages." },
+  eTooMany: { ht: "Ou ka mete jiska 10 paj.", en: "You can add up to 10 pages." },
   pickFileHint: { ht: "Pa egzanp yon foto yon moun voye ba ou sou WhatsApp, oswa yon PDF nan imèl ou.", en: "For example a photo someone sent you on WhatsApp, or a PDF from your email." },
   fileReady: { ht: "PDF la pare", en: "PDF ready" },
   picked: { ht: "Foto a pare", en: "Photo ready" },
@@ -36,7 +44,7 @@ const T: Record<string, L> = {
   high: { ht: "Ijan — aji vit", en: "Urgent — act soon" },
   medium: { ht: "Gen yon bagay pou w fè", en: "Action needed" },
   low: { ht: "Enfòmasyon sèlman", en: "Information only" },
-  eTooBig: { ht: "Fichye a twò gwo. Eseye yon foto oswa yon PDF ki pi piti.", en: "File too large. Try a smaller photo or PDF." },
+  eTooBig: { ht: "Paj yo twò lou ansanm. Retire yon paj, oswa itilize foto olye de PDF.", en: "The pages are too large together. Remove a page, or use photos instead of a PDF." },
   eType: { ht: "Voye yon foto (JPG, PNG) oswa yon PDF.", en: "Send a photo (JPG, PNG) or a PDF." },
   eNotLetter: { ht: "Sa pa sanble yon lèt. Pran yon foto tout paj lèt la, nan bon limyè.", en: "That doesn't look like a letter. Photograph the whole page in good light." },
   eBusy: { ht: "Sèvis la chaje jodi a. Eseye demen, oswa rele yon navigatè KHADA.", en: "The service is busy today. Try tomorrow or call a KHADA navigator." },
@@ -61,12 +69,12 @@ async function shrink(file: File): Promise<File> {
   if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
   try {
     const bmp = await createImageBitmap(file);
-    const scale = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)); // ~1600px keeps text readable and 10 pages under the upload limit
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(bmp.width * scale);
     canvas.height = Math.round(bmp.height * scale);
     canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.85));
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.8));
     return blob ? new File([blob], "letter.jpg", { type: "image/jpeg" }) : file;
   } catch {
     return file; // e.g. HEIC on some browsers — let the server decide
@@ -75,8 +83,8 @@ async function shrink(file: File): Promise<File> {
 
 export default function Explainer() {
   const [lang, setLang] = useState<Lang>("ht");
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  // Pages of the letter, in order. url is a local preview only (never uploaded separately).
+  const [pages, setPages] = useState<{ file: File; url: string | null }[]>([]);
   const [note, setNote] = useState("");
   const [contact, setContact] = useState("");
   const [consent, setConsent] = useState(false);
@@ -91,21 +99,37 @@ export default function Explainer() {
   const [waState, setWaState] = useState<"idle" | "busy" | "ok" | "badPhone" | "fail">("idle");
   const t = (k: string) => T[k][lang];
 
-  async function choose(f: File | undefined) {
+  const MAX_PAGES = 10;
+  const MAX_TOTAL = 4.2 * 1024 * 1024;
+
+  async function addPages(list: FileList | null) {
     setError(null);
-    if (!f) return;
-    const small = await shrink(f);
-    setFile(small);
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview(small.type.startsWith("image/") ? URL.createObjectURL(small) : null);
+    if (!list || list.length === 0) return;
+    const room = MAX_PAGES - pages.length;
+    if (room <= 0) { setError(t("eTooMany")); return; }
+    const chosen = Array.from(list).slice(0, room);
+    const small = await Promise.all(chosen.map(shrink));
+    const added = small.map((f) => ({ file: f, url: f.type.startsWith("image/") ? URL.createObjectURL(f) : null }));
+    const next = [...pages, ...added];
+    if (list.length > room) setError(t("eTooMany"));
+    if (next.reduce((n, p) => n + p.file.size, 0) > MAX_TOTAL) setError(t("eTooBig"));
+    setPages(next);
+  }
+
+  function removePage(i: number) {
+    const p = pages[i];
+    if (p?.url) URL.revokeObjectURL(p.url);
+    setPages(pages.filter((_, j) => j !== i));
+    setError(null);
   }
 
   async function submit() {
-    if (!file || !consent) return;
+    if (pages.length === 0 || !consent) return;
+    if (pages.reduce((n, p) => n + p.file.size, 0) > MAX_TOTAL) { setError(t("eTooBig")); return; }
     setBusy(true);
     setError(null);
     const fd = new FormData();
-    fd.append("letter", file);
+    for (const p of pages) fd.append("letter", p.file);
     fd.append("lang", lang);
     fd.append("note", note);
     fd.append("contact", contact);
@@ -115,7 +139,7 @@ export default function Explainer() {
       const data = await res.json().catch(() => ({}));
       if (data.emergency) setEmergency(data.emergency);
       if (!res.ok) {
-        const msg = t({ file_too_large: "eTooBig", unsupported_type: "eType", busy: "eBusy" }[data.error as string] ?? (res.status === 413 ? "eTooBig" : "eFail"));
+        const msg = t({ file_too_large: "eTooBig", unsupported_type: "eType", busy: "eBusy", too_many_pages: "eTooMany" }[data.error as string] ?? (res.status === 413 ? "eTooBig" : "eFail"));
         // Small code at the end helps KHADA find the problem (e.g. "503 not_configured").
         setError(`${msg} (${res.status}${data.error ? ` ${data.code ?? data.error}` : ""})`);
       } else if (!data.result?.is_letter) {
@@ -134,10 +158,9 @@ export default function Explainer() {
   }
 
   function reset() {
-    setR(null); setFile(null); setNote(""); setError(null);
+    for (const p of pages) if (p.url) URL.revokeObjectURL(p.url);
+    setR(null); setPages([]); setNote(""); setError(null);
     setReviewId(null); setShowWa(false); setWaConsent(false); setWaState("idle");
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview(null);
   }
 
   const ht = lang === "ht";
@@ -197,18 +220,37 @@ export default function Explainer() {
           <h1>{t("title")}</h1>
           <p className="lead">{t("lead")}</p>
 
-          {/* Camera: opens the phone camera directly. */}
-          <label className="drop">
-            <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ""; }} />
-            {preview ? <img src={preview} alt="" /> : null}
-            <span>{file ? `✓ ${t(file.type === "application/pdf" ? "fileReady" : "picked")} · ${t("change")}` : t("pick")}</span>
-          </label>
-          {/* Gallery / files: a photo received on WhatsApp, a screenshot, or a PDF from email. No "capture", so the phone offers Photos and Files. */}
-          <label className="sbtn" style={{ display: "block", cursor: "pointer", margin: "0 0 6px" }}>
-            <input type="file" accept="image/*,application/pdf" hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ""; }} />
-            {t("pickFile")}
-          </label>
-          <p className="lead" style={{ fontSize: ".85rem", margin: "0 0 8px" }}>{t("pickFileHint")}</p>
+          {pages.length > 0 && (
+            <>
+              <div className="pages">
+                {pages.map((p, i) => (
+                  <figure key={i} className="pg">
+                    {p.url ? <img src={p.url} alt="" /> : <div className="pdf">PDF</div>}
+                    <figcaption>{t("page")} {i + 1}</figcaption>
+                    <button type="button" aria-label={t("remove")} onClick={() => removePage(i)}>×</button>
+                  </figure>
+                ))}
+              </div>
+              <p className="lead" style={{ fontSize: ".9rem", margin: "0 0 8px" }}>✓ {pages.length} {t("pagesReady")} · {t("pagesMax")}</p>
+            </>
+          )}
+
+          {/* Camera: opens the phone camera directly. One page per photo. */}
+          {pages.length < MAX_PAGES && (
+            <label className="drop">
+              <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => { addPages(e.target.files); e.target.value = ""; }} />
+              <span>{t(pages.length ? "pickMore" : "pick")}</span>
+            </label>
+          )}
+          {/* Gallery / files: photos received on WhatsApp, screenshots, or a PDF from email. Several at once. */}
+          {pages.length < MAX_PAGES && (
+            <label className="sbtn" style={{ display: "block", cursor: "pointer", margin: "0 0 6px" }}>
+              <input type="file" accept="image/*,application/pdf" multiple hidden onChange={(e) => { addPages(e.target.files); e.target.value = ""; }} />
+              {t(pages.length ? "pickFileMore" : "pickFile")}
+            </label>
+          )}
+          {pages.length === 0 && <p className="lead" style={{ fontSize: ".85rem", margin: "0 0 8px" }}>{t("pickFileHint")}</p>}
+          <div className="note" style={{ fontSize: ".9rem" }}>{t("multiTip")}</div>
           <p className="lead" style={{ fontSize: ".95rem" }}>{t("tip")}</p>
 
           <label className="field">{t("noteAsk")}
@@ -224,7 +266,7 @@ export default function Explainer() {
           </label>
 
           {error && <p className="err" role="status">{error}</p>}
-          <button className="big" disabled={!file || !consent || busy} onClick={submit}>{busy ? t("busy") : t("go")}</button>
+          <button className="big" disabled={pages.length === 0 || !consent || busy} onClick={submit}>{busy ? t("busy") : t("go")}</button>
         </>
       )}
 
