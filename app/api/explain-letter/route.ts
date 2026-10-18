@@ -133,6 +133,8 @@ export async function POST(req: Request) {
   const privateLetter =
     !!result && (result.immigration_related || IMMIGRATION_WORDS.test(aiText) || /\bICE\b/.test(aiText)); // ICE: capitals only
   let reviewId: string | null = null;
+  // Short reason when saving fails, shown in small print so KHADA can see why reminders are unavailable.
+  let saveError: string | null = dbOk ? null : "db_not_ready";
   if (shouldSave) try {
     const r = result && result.is_letter ? result : null;
     const row = await db.letterReview.create({
@@ -164,9 +166,11 @@ export async function POST(req: Request) {
       }
     }
   } catch (e) {
-    console.error("could not save letter review:", (e as Error).message);
+    const code = (e as { code?: string }).code;
+    saveError = code === "P2021" || code === "P2022" ? "db_not_ready" : `db_error${code ? `_${code}` : ""}`;
+    console.error("could not save letter review:", saveError, (e as Error).message);
   }
 
   if (!result) return NextResponse.json({ error: "ai_failed", code: aiError, emergency, reviewId }, { status: 502 });
-  return NextResponse.json({ result, emergency, reviewId });
+  return NextResponse.json({ result, emergency, reviewId, saveError });
 }

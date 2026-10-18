@@ -93,6 +93,7 @@ export default function Explainer() {
   const [emergency, setEmergency] = useState<string | null>(null);
   const [r, setR] = useState<LetterResult | null>(null);
   const [reviewId, setReviewId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [showWa, setShowWa] = useState(false);
   const [waPhone, setWaPhone] = useState("");
   const [waConsent, setWaConsent] = useState(false);
@@ -147,6 +148,7 @@ export default function Explainer() {
       } else {
         setR(data.result);
         setReviewId(data.reviewId ?? null);
+        setSaveError(data.saveError ?? null);
         setWaPhone(contact);
         window.scrollTo({ top: 0 });
       }
@@ -307,6 +309,7 @@ export default function Explainer() {
                 </div>
               )}
               {waState === "ok" && <p className="ok">✓ {t("remindOk")}</p>}
+              {!reviewId && <p className="legal" style={{ margin: "8px 0 0", border: 0, padding: 0 }}>WhatsApp: {saveError ?? "not_saved"}</p>}
             </div>
           )}
 
