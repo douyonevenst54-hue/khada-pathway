@@ -33,6 +33,16 @@ When an explained letter has a future deadline, the person sees a **Fè m sonje*
 - Helpers and message wording: `lib/reminders.ts`. After pulling: `npx prisma migrate deploy`.
 - Next step: send automatically (Twilio WhatsApp/SMS + a daily Vercel cron) once a sender number is approved.
 
+## Impact report (`/navigator/impact`)
+Community-benefit style reporting for KHADA — for grants, the annual report, Form 1023, and hospital partners.
+- **Counted automatically** from the app: Pathway sessions (by pathway, ZIP, language), steps applied, help requests,
+  follow-ups done, letters explained, deadlines met.
+- **Logged by navigators**: `Program` (e.g. Edikasyon Sivik, Bouyon Kilti) and `Activity` rows — date, people served,
+  volunteer/staff hours, cost, in-kind value, ZIP, language, partner, and a short story. Counts only, never names.
+- Date range filter + **Export CSV** (`/api/impact/export?from=YYYY-MM-DD&to=YYYY-MM-DD`), opens in Excel/Sheets.
+- Optional env `VOLUNTEER_HOUR_VALUE` (dollars per hour) shows the dollar value of volunteer time.
+- Logic in `lib/impact.ts`. After pulling: `npx prisma migrate dev` locally (Vercel runs `migrate deploy` on build).
+
 ## Next
 1. Real navigator auth (magic link) and per-org accounts.
 2. 7/30-day SMS reminders (Twilio) for sessions with a contact.

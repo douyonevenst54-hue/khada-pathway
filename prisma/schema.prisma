@@ -107,3 +107,37 @@ model Reminder {
   @@unique([reviewId, kind])
   @@index([status, remindAt])
 }
+
+// ---- Impact reporting (/navigator/impact) ----
+// Activities KHADA runs outside the app: workshops, civic-education Sundays, Bouyon Kilti events,
+// food distributions, walk-in navigation. Counts only — never names, IDs or immigration status.
+model Program {
+  id         String     @id @default(cuid())
+  name       String     @unique
+  category   String // see lib/impact.ts CATEGORIES
+  active     Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  activities Activity[]
+}
+
+model Activity {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  date           DateTime @db.Date
+  program        Program  @relation(fields: [programId], references: [id])
+  programId      String
+  title          String
+  peopleServed   Int      @default(0)
+  volunteerHours Float    @default(0)
+  staffHours     Float    @default(0)
+  costCents      Int      @default(0) // money KHADA spent
+  inKindCents    Int      @default(0) // donated goods/space, at fair value
+  zip            String? // where it happened
+  lang           String? // ht | en | fr | es | mixed
+  partner        String? // partner organization, if any
+  note           String? // the story: what happened, what changed
+  loggedBy       String
+
+  @@index([date])
+  @@index([programId, date])
+}

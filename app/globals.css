@@ -92,3 +92,19 @@ h3{font-size:1.2rem;margin:8px 0 6px}
 .pg .pdf{display:grid;place-items:center;font-weight:700;color:var(--muted)}
 .pg figcaption{font-size:.8rem;text-align:center;padding:2px 0}
 .pg button{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:0;background:var(--red);color:#fff;font-size:1.1rem;line-height:1;cursor:pointer}
+
+/* --- impact report (/navigator/impact) --- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0 20px}
+.kpi{background:var(--field);border-radius:var(--radius);padding:12px 14px}
+.kpi .v{font-size:1.6rem;font-weight:700;line-height:1.1}
+.kpi .k{font-size:.85rem;color:var(--muted)}
+.iform{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px 12px;margin:8px 0 12px}
+.iform label{display:flex;flex-direction:column;gap:4px;font-size:.88rem;color:var(--muted)}
+.iform .wide{grid-column:1 / -1}
+.iform input,.iform select,.iform textarea{font:inherit;font-size:1rem;color:var(--ink);background:var(--field);border:2px solid var(--line);border-radius:10px;padding:9px 10px;width:100%}
+.iform textarea{resize:vertical;min-height:70px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.chips a{font-size:.9rem;padding:6px 12px;border-radius:999px;border:2px solid var(--line);text-decoration:none;color:var(--ink)}
+.chips a[aria-current="true"]{border-color:var(--blue);color:var(--blue);font-weight:700}
+.bar{height:8px;border-radius:4px;background:var(--blue);min-width:2px}
+@media print{.iform,.chips,.no-print{display:none!important}}

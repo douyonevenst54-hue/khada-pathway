@@ -43,6 +43,7 @@ export default async function Navigator({ searchParams }: { searchParams: Promis
     <main className="app" style={{ maxWidth: 760 }}>
       <header>
         <div className="brand">KHADA <span>Navigator</span></div>
+        <a href="/navigator/impact" style={{ fontSize: ".95rem", marginLeft: "auto", marginRight: 10 }}>Impact report →</a>
         <form action="/api/auth/logout" method="post"><button className="quiet" style={{ width: "auto", padding: "6px 10px" }}>Sign out ({nav.name})</button></form>
       </header>
       <p className="lead">{total} sessions · {help.length} help requests · {due.length} follow-ups due · {letters.length} letters to review</p>
